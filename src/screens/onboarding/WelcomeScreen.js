@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import Button from '../../components/common/Button';
-import { colors, typography, spacing } from '../../styles';
+import { colors, spacing } from '../../styles';
 
 const WelcomeScreen = ({ navigation }) => {
   return (
@@ -28,6 +28,7 @@ const WelcomeScreen = ({ navigation }) => {
           <Button
             title="Get Started"
             onPress={() => navigation.navigate('RoleSelection')}
+            textStyle={{ color: 'black' }}
           />
         </View>
       </View>

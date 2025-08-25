@@ -128,6 +128,7 @@ const LoginScreen = ({ navigation, route }) => {
             onPress={handleSubmit(onSubmit)}
             loading={loading}
             style={styles.loginButton}
+            textStyle={{ color: 'black' }}
           />
 
           <View style={styles.signupContainer}>
@@ -139,13 +140,13 @@ const LoginScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.divider}>
+          {/* <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
-          </View>
+          </View> */}
 
-          <Button
+          {/* <Button
             title="🌐 Continue with Google"
             variant="social"
             style={styles.socialButton}
@@ -155,12 +156,12 @@ const LoginScreen = ({ navigation, route }) => {
             title="📘 Continue with Facebook"
             variant="social"
             style={styles.socialButton}
-          />
+          /> */}
         </View>
 
-        <View style={styles.testCredentials}>
+        {/* <View style={styles.testCredentials}>
           <Text style={styles.testText}>Test: test@example.com / password</Text>
-        </View>
+        </View> */}
       </ScrollView>
     </ImageBackground>
   );

@@ -43,7 +43,8 @@
       "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
+     "plugins": [
+      "expo-dev-client",
       "expo-location",
       "expo-notifications"
     ],

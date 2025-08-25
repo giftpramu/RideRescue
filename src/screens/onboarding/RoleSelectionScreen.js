@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import Button from '../../components/common/Button';
 import { colors, typography, spacing } from '../../styles';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const RoleSelectionScreen = ({ navigation }) => {
   const [selectedRole, setSelectedRole] = React.useState(null);
@@ -12,7 +13,7 @@ const RoleSelectionScreen = ({ navigation }) => {
     }
   };
 
-  const RoleOption = ({ role, title, icon }) => (
+  const RoleOption = ({ role, title, iconName }) => (
     <TouchableOpacity
       style={[
         styles.roleOption,
@@ -26,7 +27,7 @@ const RoleSelectionScreen = ({ navigation }) => {
         </View>
         <Text style={styles.roleTitle}>{title}</Text>
         <View style={styles.iconContainer}>
-          <Text style={styles.roleIcon}>{icon}</Text>
+          <MaterialCommunityIcons name={iconName} size={24} color="white" />
         </View>
       </View>
     </TouchableOpacity>
@@ -39,28 +40,30 @@ const RoleSelectionScreen = ({ navigation }) => {
       resizeMode="cover"
     >
       <View style={styles.overlay} />
-      <View style={styles.container}>
+      <View style={[styles.container, { justifyContent: 'flex-start', flex: 1 }]}>
         <Text style={styles.title}>Choose your Role</Text>
-        
         <View style={styles.rolesContainer}>
           <RoleOption
             role="vehicle_owner"
             title="Vehicle Owner"
-            icon="👨‍💼"
+            iconName="account"
           />
-          
           <RoleOption
             role="service_provider"
             title="Service Provider"
-            icon="🔧"
+            iconName="tools"
           />
         </View>
-        
-        <Button
-          title="Continue"
-          onPress={handleContinue}
-          disabled={!selectedRole}
-        />
+        <View style={{ flex: 1 }} />
+        <View style={{ paddingBottom: 32 }}>
+          <Button
+            title="Continue"
+            onPress={handleContinue}
+            disabled={!selectedRole}
+            variant="primary"
+            textStyle={{ color: 'black' }}
+          />
+        </View>
       </View>
     </ImageBackground>
   );

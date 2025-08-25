@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import TestLoginScreen from '../screens/TestLoginScreen';
 import MainNavigator from './MainNavigator'; // Vehicle Owner Navigation
 import ServiceProviderNavigator from '../components/navigation/ServiceProviderNavigator';
+import AuthNavigator from './AuthNavigator';
 
 const Stack = createStackNavigator();
 
@@ -18,7 +19,7 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isAuthenticated ? (
-        <Stack.Screen name="TestLogin" component={TestLoginScreen} />
+        <Stack.Screen name="Auth" component={AuthNavigator} />
       ) : userType === 'service-provider' ? (
         <Stack.Screen name="ServiceProvider" component={ServiceProviderNavigator} />
       ) : (
