@@ -10,7 +10,7 @@ import AuthNavigator from './AuthNavigator';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const { isLoading, isAuthenticated, userType } = useAuth();
+  const { isLoading, isAuthenticated, user } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -20,7 +20,7 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isAuthenticated ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
-      ) : userType === 'service-provider' ? (
+      ) : user?.userType === 'service-provider' ? (
         <Stack.Screen name="ServiceProvider" component={ServiceProviderNavigator} />
       ) : (
         <Stack.Screen name="VehicleOwner" component={MainNavigator} />

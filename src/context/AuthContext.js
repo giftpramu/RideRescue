@@ -1,99 +1,231 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// src/context/AuthContext.js
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { authService } from '../services/api/authService';
 
 const AuthContext = createContext();
 
+const initialState = {
+  isAuthenticated: false,
+  user: null,
+  isLoading: false,
+  token: null,
+  isInitialized: false, // Track if auth state has been initialized
+  currentAuthScreen: 'Welcome',
+};
+
+const authReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    
+    case 'SET_INITIALIZED':
+      return { ...state, isInitialized: true, isLoading: false };
+    
+    case 'LOGIN_SUCCESS':
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload.user,
+        token: action.payload.token,
+        isLoading: false,
+        isInitialized: true,
+      };
+    
+    case 'LOGIN_FAILURE':
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        isLoading: false,
+        isInitialized: true,
+      };
+    
+    case 'LOGOUT':
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        isLoading: false,
+        isInitialized: true,
+      };
+
+    case 'SET_AUTH_SCREEN':
+      return {
+        ...state,
+        currentAuthScreen: action.payload,
+      };
+    
+    case 'RESTORE_SESSION':
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload.user,
+        token: action.payload.token,
+        isLoading: false,
+        isInitialized: true,
+      };
+    
+    default:
+      return state;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const [userType, setUserType] = useState(null);
+  const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Initialize auth state on app start
   useEffect(() => {
-    // Simulate loading and auto-login for testing
-    setTimeout(() => {
-      // CHANGE THIS TO TEST DIFFERENT USER TYPES
-      const testUserType = 'service-provider'; // Change to 'vehicle-owner' or 'service-provider'
-      
-      let mockUser;
-      if (testUserType === 'vehicle-owner') {
-        mockUser = {
-          id: 1,
-          name: 'Pramudi Gamage',
-          email: 'gamage123@gmail.com',
-          phone: '077 256 2589',
-          address: '27, Galle Road, Dehiwala'
-        };
-      } else {
-        mockUser = {
-          id: 2,
-          name: 'Sterling AfterCare Centre',
-          email: 'sterling@aftercare.com',
-          phone: '077 123 4567',
-          address: 'Colombo 07'
-        };
-      }
-
-      setUser(mockUser);
-      setUserType(testUserType);
-      setIsAuthenticated(true);
-      setIsLoading(false);
-    }, 1000);
+    initializeAuth();
   }, []);
 
-  const signIn = async (email, password, selectedUserType) => {
-    let mockUser;
-    if (selectedUserType === 'vehicle-owner') {
-      mockUser = {
-        id: 1,
-        name: 'Pramudi Gamage',
-        email: email,
-        phone: '077 256 2589'
-      };
-    } else {
-      mockUser = {
-        id: 2,
-        name: 'Sterling AfterCare Centre',
-        email: email,
-        phone: '077 123 4567'
-      };
+  const initializeAuth = async () => {
+    console.log('Initializing auth state...');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      const token = await authService.getStoredToken();
+      const user = await authService.getCurrentUser();
+      
+      if (token && user) {
+        // Check if token is expired (if your backend provides expiration time)
+        const isExpired = await authService.isTokenExpired();
+        
+        if (!isExpired) {
+          // Set token in API headers
+          authService.setAuthToken(token);
+          
+          dispatch({
+            type: 'RESTORE_SESSION',
+            payload: { user, token }
+          });
+          
+          console.log('Session restored for user:', user.username, 'Type:', user.userType);
+        } else {
+          console.log('Token expired, clearing session');
+          await authService.logout();
+          dispatch({ type: 'SET_INITIALIZED' });
+        }
+      } else {
+        console.log('No existing session found');
+        dispatch({ type: 'SET_INITIALIZED' });
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      dispatch({ type: 'SET_INITIALIZED' });
     }
-
-    setUser(mockUser);
-    setUserType(selectedUserType);
-    setIsAuthenticated(true);
-    return { success: true };
   };
 
-  const signUp = async (userData) => {
-    const mockUser = {
-      id: 1,
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone
-    };
-
-    setUser(mockUser);
-    setUserType(userData.userType);
-    setIsAuthenticated(true);
-    return { success: true };
+  const setCurrentAuthScreen = (screenName) => {
+    dispatch({ type: 'SET_AUTH_SCREEN', payload: screenName });
   };
 
-  const signOut = () => {
-    setUser(null);
-    setUserType(null);
-    setIsAuthenticated(false);
+  // Updated signIn method - removed userType parameter
+  const signIn = async (usernameOrEmail, password) => {
+    console.log('AuthContext.signIn called for user:', usernameOrEmail);
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      // Use authService for login (backend determines user type)
+      const response = await authService.login(usernameOrEmail, password);
+      
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: {
+          user: response.user,
+          token: response.accessToken
+        }
+      });
+      
+      console.log('AuthContext: Login successful for user:', response.user?.username, 'Type:', response.user?.userType);
+      
+      return {
+        success: true,
+        user: response.user,
+        userType: response.user?.userType // Backend provides the actual user type
+      };
+    } catch (error) {
+      console.error('AuthContext.signIn error:', error);
+      dispatch({ type: 'LOGIN_FAILURE' });
+      throw error;
+    }
+  };
+
+  const signUp = async (userData, userType) => {
+    console.log('AuthContext.signUp called with userType:', userType);
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      let response;
+      
+      if (userType === 'service-provider') {
+        response = await authService.registerServiceProvider(userData);
+      } else if (userType === 'admin') {
+        response = await authService.createAdmin(userData);
+      } else {
+        response = await authService.registerVehicleOwner(userData);
+      }
+      
+      dispatch({ type: 'SET_LOADING', payload: false });
+      console.log('AuthContext: Registration successful');
+      return response;
+    } catch (error) {
+      console.error('AuthContext.signUp error:', error);
+      dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    console.log('AuthContext.signOut called');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      await authService.logout();
+      dispatch({ type: 'LOGOUT' });
+      console.log('AuthContext: Logout successful');
+    } catch (error) {
+      console.error('AuthContext.signOut error:', error);
+      // Still logout locally even if server request fails
+      dispatch({ type: 'LOGOUT' });
+    }
+  };
+
+  // Helper method to check user role
+  const hasRole = (role) => {
+    return state.user?.userType === role;
+  };
+
+  // Helper method to check if user is admin
+  const isAdmin = () => {
+    return hasRole('ADMIN') || hasRole('admin');
+  };
+
+  // Helper method to check if user is service provider
+  const isServiceProvider = () => {
+    return hasRole('SERVICE_PROVIDER') || hasRole('service-provider');
+  };
+
+  // Helper method to check if user is vehicle owner
+  const isVehicleOwner = () => {
+    return hasRole('VEHICLE_OWNER') || hasRole('vehicle-owner');
+  };
+
+  const value = {
+    ...state,
+    signIn,
+    signUp,
+    signOut,
+    setCurrentAuthScreen,
+    hasRole,
+    isAdmin,
+    isServiceProvider,
+    isVehicleOwner,
   };
 
   return (
-    <AuthContext.Provider value={{
-      isLoading,
-      isAuthenticated,
-      user,
-      userType,
-      signIn,
-      signUp,
-      signOut,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

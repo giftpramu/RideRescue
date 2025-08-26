@@ -10,13 +10,16 @@ import VerifyScreen from '../screens/auth/VerifyScreen';
 import VerifySuccessScreen from '../screens/auth/VerifySuccessScreen';
 import UploadDocumentsScreen from '../screens/auth/UploadDocumentsScreen';
 import ServicePriceDetailsScreen from '../screens/auth/ServicePriceDetailsScreen';
+import { useAuth } from '../context/AuthContext';
 
 const Stack = createStackNavigator();
 
 const AuthNavigator = () => {
+  const { currentAuthScreen } = useAuth();
+
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
+      initialRouteName={ currentAuthScreen }
       screenOptions={{
         headerShown: false,
         gestureEnabled: true,
