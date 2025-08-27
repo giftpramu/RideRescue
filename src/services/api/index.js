@@ -43,27 +43,35 @@ const PUBLIC_ROUTES = [
 
 // Helper function to check if a URL is a public route
 const isPublicRoute = (url) => {
-  return PUBLIC_ROUTES.some(route => url.includes(route));
+  const isPublic = PUBLIC_ROUTES.some(route => url.includes(route));
+  console.log(`Checking if "${url}" is public:`, isPublic, 'Routes:', PUBLIC_ROUTES);
+  return isPublic;
 };
 
 // Request interceptor to add auth token and logging (FIXED)
 api.interceptors.request.use(
   async (config) => {
     try {
-      // Only add token for non-public routes
-      if (!isPublicRoute(config.url)) {
+      const isPublic = isPublicRoute(config.url);
+      console.log(`Checking route "${config.url}" - isPublic: ${isPublic}`);
+      
+      // Only add token for non-public routes AND ensure we don't have one already
+      if (!isPublic) {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+      } else {
+        // Explicitly remove any existing Authorization header for public routes
+        delete config.headers.Authorization;
       }
     } catch (error) {
-      console.error('Error getting auth token:', error);
+      console.error('Error in request interceptor:', error);
     }
 
     console.log(
       `API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`,
-      isPublicRoute(config.url) ? 'public route' : (config.headers.Authorization ? 'with token' : 'no token')
+      isPublicRoute(config.url) ? 'PUBLIC ROUTE' : (config.headers.Authorization ? 'WITH TOKEN' : 'NO TOKEN')
     );
     
     return config;

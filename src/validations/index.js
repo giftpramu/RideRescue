@@ -1,4 +1,7 @@
 export * from './authSchemas';
+export * from './userSchemas';
+export * from './vehicleSchemas';
+export * from './serviceSchemas';
 
 // Utility function for common validations
 export const createOptionalField = (schema) => {

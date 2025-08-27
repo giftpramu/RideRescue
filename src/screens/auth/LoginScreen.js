@@ -14,7 +14,8 @@ const LoginScreen = ({ navigation, route }) => {
   const { signIn, isLoading, setCurrentAuthScreen  } = useAuth();
   
   // Keep userType for UI display purposes only (not sent to backend)
-  const userType = route.params?.userType || 'vehicle-owner';
+  const initialUserType = route.params?.userType || 'vehicle-owner';
+  const [userType, setUserType] = useState(initialUserType);
 
   // Add this useEffect to set the current screen when component mounts
   useEffect(() => {
@@ -115,9 +116,6 @@ const LoginScreen = ({ navigation, route }) => {
         <View>
           <View style={styles.header}>
             <Text style={styles.title}>Login</Text>
-            <Text style={styles.subtitle}>
-              Enter your credentials to access your account
-            </Text>
           </View>
 
           <View style={styles.form}>
@@ -180,7 +178,7 @@ const LoginScreen = ({ navigation, route }) => {
             <View style={styles.signupContainer}>
               <Text style={styles.signupText}>Don't have an Account? </Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('Signup', { userType })}
+                onPress={() => navigation.navigate('VehicleOwnerSignup', { userType })}
               >
                 <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
@@ -194,24 +192,15 @@ const LoginScreen = ({ navigation, route }) => {
           <TouchableOpacity
             onPress={() => {
               const newUserType = userType === 'vehicle-owner' ? 'service-provider' : 'vehicle-owner';
+              setUserType(newUserType);
               navigation.setParams({ userType: newUserType });
             }}
           >
             <Text style={styles.switcherLink}>
-              Switch to {userType === 'vehicle-owner' ? 'Service Provider' : 'Vehicle Owner'} signup
+              Switch to {userType === 'vehicle-owner' ? 'Service Provider' : 'Vehicle Owner'} login
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Test Credentials for Development */}
-        {__DEV__ && (
-          <View style={styles.testCredentials}>
-            <Text style={styles.testTitle}>Test Credentials:</Text>
-            <Text style={styles.testText}>Vehicle Owner: shalby2 / password123shalby2</Text>
-            <Text style={styles.testText}>Service Provider: automiraj / password1234automiraj</Text>
-            <Text style={styles.testNote}>(Login determines user type automatically)</Text>
-          </View>
-        )}
       </ScrollView>
     </ImageBackground>
   );

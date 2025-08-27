@@ -50,7 +50,23 @@ export const authService = {
   registerVehicleOwner: async (userData) => {
     try {
       console.log('Registering vehicle owner:', userData);
-      const response = await api.post('/auth/signup/vehicle-owner', userData);
+      
+      // Transform data to match backend VehicleOwnerSignupRequest structure
+      const backendData = {
+        name: userData.name,
+        username: userData.username,
+        email: userData.email,
+        contactNumber: userData.contactNumber,
+        address: userData.address,
+        password: userData.password,
+        vehicleBrand: userData.vehicleBrand,
+        vehicleModel: userData.vehicleModel,
+        vehicleYear: userData.vehicleYear,
+        vehicleRegistrationNumber: userData.vehicleRegistrationNumber,
+      };
+      
+      const response = await api.post('/auth/signup/vehicle-owner', backendData);
+      console.log('Vehicle owner registration response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Vehicle owner registration error:', error);

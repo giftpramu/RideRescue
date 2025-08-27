@@ -130,20 +130,26 @@ export const AuthProvider = ({ children }) => {
       // Use authService for login (backend determines user type)
       const response = await authService.login(usernameOrEmail, password);
       
+      // Transform backend role to frontend userType format
+      const userWithUserType = {
+        ...response.user,
+        userType: response.user.role // Map backend 'role' field to 'userType'
+      };
+      
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: {
-          user: response.user,
+          user: userWithUserType,
           token: response.accessToken
         }
       });
       
-      console.log('AuthContext: Login successful for user:', response.user?.username, 'Type:', response.user?.userType);
+      console.log('AuthContext: Login successful for user:', userWithUserType?.username, 'Type:', userWithUserType?.userType);
       
       return {
         success: true,
-        user: response.user,
-        userType: response.user?.userType // Backend provides the actual user type
+        user: userWithUserType,
+        userType: userWithUserType?.userType // Use the mapped userType
       };
     } catch (error) {
       console.error('AuthContext.signIn error:', error);

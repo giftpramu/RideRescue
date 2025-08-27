@@ -66,6 +66,7 @@ const SignupScreen = ({ navigation, route }) => {
     }
   };
 
+  
   const {
     control,
     handleSubmit,

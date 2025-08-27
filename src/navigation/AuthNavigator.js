@@ -11,6 +11,8 @@ import VerifySuccessScreen from '../screens/auth/VerifySuccessScreen';
 import UploadDocumentsScreen from '../screens/auth/UploadDocumentsScreen';
 import ServicePriceDetailsScreen from '../screens/auth/ServicePriceDetailsScreen';
 import { useAuth } from '../context/AuthContext';
+import VehicleOwnerSignupScreen from '../screens/auth/VehicleOwnerSignupScreen';
+import ServiceProviderSignupScreen from '../screens/auth/ServiceProviderSignupScreen';
 
 const Stack = createStackNavigator();
 
@@ -43,6 +45,8 @@ const AuthNavigator = () => {
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="VehicleOwnerSignup" component={VehicleOwnerSignupScreen} />
+      <Stack.Screen name="ServiceProviderSignup" component={ServiceProviderSignupScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="Verify" component={VerifyScreen} />
