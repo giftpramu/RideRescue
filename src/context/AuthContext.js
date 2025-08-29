@@ -1,4 +1,5 @@
-// src/context/AuthContext.js
+// Complete AuthContext.js replacement with registration state management
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authService } from '../services/api/authService';
 
@@ -9,8 +10,12 @@ const initialState = {
   user: null,
   isLoading: false,
   token: null,
-  isInitialized: false, // Track if auth state has been initialized
+  isInitialized: false,
   currentAuthScreen: 'Welcome',
+  // Registration state management
+  registrationState: null, // null, 'pending_documents', 'completed'
+  pendingServiceProviderId: null,
+  pendingUserEmail: null,
 };
 
 const authReducer = (state, action) => {
@@ -29,6 +34,10 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         isLoading: false,
         isInitialized: true,
+        // Clear registration state on successful login
+        registrationState: null,
+        pendingServiceProviderId: null,
+        pendingUserEmail: null,
       };
     
     case 'LOGIN_FAILURE':
@@ -49,6 +58,10 @@ const authReducer = (state, action) => {
         token: null,
         isLoading: false,
         isInitialized: true,
+        // Clear registration state on logout
+        registrationState: null,
+        pendingServiceProviderId: null,
+        pendingUserEmail: null,
       };
 
     case 'SET_AUTH_SCREEN':
@@ -65,6 +78,23 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         isLoading: false,
         isInitialized: true,
+      };
+    
+    // Registration state management
+    case 'SET_REGISTRATION_STATE':
+      return {
+        ...state,
+        registrationState: action.payload.state,
+        pendingServiceProviderId: action.payload.serviceProviderId || state.pendingServiceProviderId,
+        pendingUserEmail: action.payload.email || state.pendingUserEmail,
+      };
+    
+    case 'CLEAR_REGISTRATION_STATE':
+      return {
+        ...state,
+        registrationState: null,
+        pendingServiceProviderId: null,
+        pendingUserEmail: null,
       };
     
     default:
@@ -121,6 +151,19 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'SET_AUTH_SCREEN', payload: screenName });
   };
 
+  const setRegistrationState = (state, serviceProviderId = null, email = null) => {
+    console.log('Setting registration state:', state, 'ID:', serviceProviderId);
+    dispatch({ 
+      type: 'SET_REGISTRATION_STATE', 
+      payload: { state, serviceProviderId, email } 
+    });
+  };
+
+  const clearRegistrationState = () => {
+    console.log('Clearing registration state');
+    dispatch({ type: 'CLEAR_REGISTRATION_STATE' });
+  };
+
   // Updated signIn method - removed userType parameter
   const signIn = async (usernameOrEmail, password) => {
     console.log('AuthContext.signIn called for user:', usernameOrEmail);
@@ -167,6 +210,12 @@ export const AuthProvider = ({ children }) => {
       
       if (userType === 'service-provider') {
         response = await authService.registerServiceProvider(userData);
+        
+        // Set registration state for service providers to trigger document upload flow
+        if (response?.id) {
+          console.log('Service provider registered, setting pending_documents state');
+          setRegistrationState('pending_documents', response.id, userData.email);
+        }
       } else if (userType === 'admin') {
         response = await authService.createAdmin(userData);
       } else {
@@ -224,6 +273,8 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signOut,
     setCurrentAuthScreen,
+    setRegistrationState,
+    clearRegistrationState,
     hasRole,
     isAdmin,
     isServiceProvider,
@@ -243,4 +294,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}; 

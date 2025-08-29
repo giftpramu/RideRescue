@@ -31,7 +31,7 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
     },
   });
 
-  const onSubmit = async (data) => {
+const onSubmit = async (data) => {
     console.log('Service Provider Form submitted with data:', data);
     console.log('Form errors:', errors);
     
@@ -42,6 +42,7 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
       // Transform data to match backend expected format
       const signupData = {
         businessName: data.businessName,
+        username: data.username,
         email: data.email,
         password: data.password,
         contactNumber: data.mobile,
@@ -53,25 +54,24 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
 
       console.log('Transformed service provider signup data:', signupData);
       
-      // Call AuthContext signUp method
       const response = await signUp(signupData, 'service-provider');
-      
       console.log('Service Provider Registration successful:', response);
-      
-      // Navigate to document upload screen for service providers
-      Alert.alert(
-        'Registration Submitted', 
-        'Your registration has been submitted successfully! Please upload your documents to complete the registration process.',
-        [
-          { 
-            text: 'Upload Documents', 
-            onPress: () => navigation.navigate('UploadDocuments', { 
-              serviceProviderId: response?.id,
-              email: data.email 
-            })
-          }
-        ]
-      );
+
+      // Check if we have the service provider ID
+      if (response?.id) {
+        console.log('Service provider registered with ID:', response.id);
+        console.log('AuthContext will now handle navigation to document upload');
+        
+        // The AuthContext has already set the registration state in signUp method
+        // The AppNavigator will automatically show the UploadDocuments screen
+        // No manual navigation needed here
+        
+      } else {
+        // If no ID received, show error
+        console.error('No service provider ID received from backend:', response);
+        Alert.alert('Error', 'Registration successful but ID not received. Please try logging in.');
+        navigation.navigate('Login');
+      }
       
     } catch (error) {
       console.error('Service Provider Registration error:', error);
@@ -103,12 +103,6 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
     }
   };
 
-  // Add a test function to check if the form validation works
-  const testFormValidation = () => {
-    console.log('Current form errors:', errors);
-    console.log('Form is valid:', Object.keys(errors).length === 0);
-  };
-
   return (
     <ImageBackground
       source={require('../../../assets/images/car-background.jpeg')}
@@ -123,8 +117,7 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
       >
         <View style={styles.header}>
           <View style={styles.progressContainer}>
-            <ProgressBar currentStep={1} totalSteps={4} />
-            <Text style={styles.stepText}>(1/4)</Text>
+            <ProgressBar currentStep={1} totalSteps={2} />
           </View>
           <Text style={styles.title}>Sign Up as Service Provider</Text>
           <Text style={styles.subtitle}>
@@ -147,6 +140,21 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
                 onBlur={onBlur}
                 error={errors.businessName?.message}
                 autoCapitalize="words"
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="username"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                placeholder="Username"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.username?.message}
+                autoCapitalize="none"
               />
             )}
           />
@@ -262,13 +270,8 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
             )}
           />
 
-          {/* Debug button - remove this in production */}
-          <TouchableOpacity onPress={testFormValidation} style={styles.debugButton}>
-            <Text style={styles.debugText}>Test Form Validation (Debug)</Text>
-          </TouchableOpacity>
-
           <Button
-            title={isLoading ? "Creating Account..." : "Next: Upload Documents"}
+            title={isLoading ? "Creating Account..." : "Continue to Upload Documents"}
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
             disabled={isLoading}
@@ -283,16 +286,6 @@ const ServiceProviderSignupScreen = ({ navigation, route }) => {
             >
               <Text style={styles.loginLink}>Login</Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoTitle}>What happens next?</Text>
-            <Text style={styles.infoText}>
-              1. Upload required documents{'\n'}
-              2. Admin verification process{'\n'}
-              3. Account activation{'\n'}
-              4. Start receiving service requests
-            </Text>
           </View>
         </View>
       </ScrollView>

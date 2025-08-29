@@ -27,7 +27,7 @@ console.log('API Base URL:', BASE_URL);
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,7 +38,10 @@ const PUBLIC_ROUTES = [
   '/auth/login',
   '/auth/signup/vehicle-owner',
   '/auth/signup/service-provider',
+  '/api/documents/upload',
+  '/api/documents/service-provider',
   '/auth/create-admin',
+  '/service-providers/nearby',
 ];
 
 // Helper function to check if a URL is a public route

@@ -82,6 +82,7 @@ export const authService = {
     try {
       console.log('Registering service provider:', userData);
       const response = await api.post('/auth/signup/service-provider', userData);
+      console.log('service provider registration response:', response);
       return response.data;
     } catch (error) {
       console.error('Service provider registration error:', error);

@@ -1,6 +1,6 @@
-// src/screens/auth/LoginScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import Input from '../../components/common/Input';
@@ -11,13 +11,12 @@ import { loginSchema } from '../../validations/authSchemas';
 
 const LoginScreen = ({ navigation, route }) => {
   const [rememberMe, setRememberMe] = useState(false);
-  const { signIn, isLoading, setCurrentAuthScreen  } = useAuth();
+  const { signIn, isLoading, setCurrentAuthScreen } = useAuth();
   
-  // Keep userType for UI display purposes only (not sent to backend)
-  const initialUserType = route.params?.userType || 'vehicle-owner';
+  // Get userType from route params (passed from RoleSelectionScreen)
+  const initialUserType = route.params?.userType || 'vehicle_owner';
   const [userType, setUserType] = useState(initialUserType);
 
-  // Add this useEffect to set the current screen when component mounts
   useEffect(() => {
     setCurrentAuthScreen('Login');
   }, []);
@@ -99,6 +98,18 @@ const LoginScreen = ({ navigation, route }) => {
     }
   };
 
+  // Dynamic signup navigation based on selected user type
+  const handleSignupNavigation = () => {
+    console.log('Navigating to signup for user type:', userType);
+    
+    if (userType === 'service_provider') {
+      navigation.navigate('ServiceProviderSignup');
+    } else {
+      // Default to vehicle owner signup
+      navigation.navigate('VehicleOwnerSignup');
+    }
+  };
+
   return (
     <ImageBackground
       source={require('../../../assets/images/car-background.jpeg')}
@@ -115,7 +126,15 @@ const LoginScreen = ({ navigation, route }) => {
       >
         <View>
           <View style={styles.header}>
-            <Text style={styles.title}>Login</Text>
+            <View style={styles.titleRow}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.navigate('RoleSelection')}
+              >
+                <Ionicons name="arrow-back" size={20} color={colors.white} />
+              </TouchableOpacity>
+              <Text style={styles.title}>Login</Text>
+            </View>
           </View>
 
           <View style={styles.form}>
@@ -175,29 +194,30 @@ const LoginScreen = ({ navigation, route }) => {
               textStyle={{ color: 'black' }}
             />
 
+            {/* Updated signup navigation - now dynamic based on user type */}
             <View style={styles.signupContainer}>
               <Text style={styles.signupText}>Don't have an Account? </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('VehicleOwnerSignup', { userType })}
-              >
-                <Text style={styles.signupLink}>Sign Up</Text>
+              <TouchableOpacity onPress={handleSignupNavigation}>
+                <Text style={styles.signupLink}>
+                  Sign Up
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* User Type Switcher - For UI/Signup purposes only */}
+        {/* User Type Switcher */}
         <View style={styles.userTypeSwitcher}>
-          <Text style={styles.switcherText}>Planning to sign up as a different user type?</Text>
+          <Text style={styles.switcherText}>Want to login as a different user type?</Text>
           <TouchableOpacity
             onPress={() => {
-              const newUserType = userType === 'vehicle-owner' ? 'service-provider' : 'vehicle-owner';
+              const newUserType = userType === 'vehicle_owner' ? 'service_provider' : 'vehicle_owner';
               setUserType(newUserType);
               navigation.setParams({ userType: newUserType });
             }}
           >
             <Text style={styles.switcherLink}>
-              Switch to {userType === 'vehicle-owner' ? 'Service Provider' : 'Vehicle Owner'} login
+              Switch to {userType === 'vehicle_owner' ? 'Service Provider' : 'Vehicle Owner'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -206,7 +226,6 @@ const LoginScreen = ({ navigation, route }) => {
   );
 };
 
-// Styles remain the same
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
@@ -218,10 +237,24 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: spacing.lg,
-    paddingTop: spacing.xxxl,
+    paddingTop: spacing.xl, // Reduced padding to accommodate back button
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   header: {
     marginBottom: spacing.xl,
+    marginTop: spacing.xl
   },
   title: {
     ...typography.heading1,
@@ -282,6 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: spacing.md,
+    flexWrap: 'wrap',
   },
   signupText: {
     color: colors.textSecondary,
@@ -303,34 +337,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   switcherLink: {
     color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
-  },
-  testCredentials: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: spacing.md,
-    borderRadius: 8,
-    marginTop: spacing.md,
-  },
-  testTitle: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
     marginBottom: spacing.sm,
-  },
-  testText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginBottom: spacing.xs,
-  },
-  testNote: {
-    color: colors.warning,
-    fontSize: 11,
-    fontStyle: 'italic',
-    marginTop: spacing.xs,
   },
 });
 
