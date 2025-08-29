@@ -196,7 +196,7 @@ export default function MapScreen({ navigation }) {
             </View>
 
             <View style={styles.cardFooter}>
-              <Text style={styles.tapText}>Tap to view services</Text>
+              <Text style={styles.tapText}>Tap to book services</Text>
             </View>
           </TouchableOpacity>
         </View>

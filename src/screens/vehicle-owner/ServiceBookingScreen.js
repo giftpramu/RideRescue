@@ -7,8 +7,13 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  StatusBar,
+  SafeAreaView,
+  Platform,
 } from 'react-native';
-import { colors, spacing } from '../../styles';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Calendar } from 'react-native-calendars';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 
 const ServiceBookingScreen = ({ navigation, route }) => {
@@ -16,14 +21,17 @@ const ServiceBookingScreen = ({ navigation, route }) => {
   const { user } = useAuth();
   
   const [bookingData, setBookingData] = useState({
-    carOwner: user?.name || 'Pramudi Gamage',
-    vehicleType: 'Toyota - Corolla E210',
-    pickupAddress: user?.address || '27/12, 1 st lane, Galle Road, Dehiwala',
-    date: '21.01.2025',
-    timeSlot: '9:00 - 9:30 am',
-    phoneNumber: user?.phone || '077 256 2589',
     specialInstructions: '',
   });
+
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [currentServices, setCurrentServices] = useState(selectedServices || []);
+
+  // Sample date options - removed
+  // Sample time slots - removed
 
   const handleInputChange = (field, value) => {
     setBookingData(prev => ({
@@ -32,24 +40,68 @@ const ServiceBookingScreen = ({ navigation, route }) => {
     }));
   };
 
+  const removeService = (serviceId) => {
+    setCurrentServices(prev => prev.filter(service => service.id !== serviceId));
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Select a date';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (time) => {
+    return time.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const onDateSelect = (day) => {
+    setSelectedDate(day.dateString);
+    setShowCalendar(false);
+  };
+
+  const onTimeChange = (event, time) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (time) {
+      setSelectedTime(time);
+    }
+  };
+
   const handleBookService = () => {
     // Validate required fields
-    if (!bookingData.carOwner || !bookingData.vehicleType || !bookingData.pickupAddress) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (currentServices.length === 0) {
+      Alert.alert('Error', 'Please select at least one service');
+      return;
+    }
+
+    if (!selectedDate) {
+      Alert.alert('Error', 'Please select a date');
       return;
     }
 
     const bookingDetails = {
       ...bookingData,
       serviceCenter: serviceCenter,
-      selectedServices: selectedServices,
-      bookingId: 'BK${Date.now()}',
+      selectedServices: currentServices,
+      date: selectedDate,
+      time: formatTime(selectedTime),
+      bookingId: `BK${Date.now()}`,
       status: 'pending'
     };
 
     Alert.alert(
       'Booking Confirmed',
-      'Your service request has been sent to ${serviceCenter?.name}. You will be notified once they accept your request.',
+      `Your service request has been sent to ${serviceCenter?.businessName || serviceCenter?.name}. You will be notified once they accept your request.`,
       [
         { 
           text: 'OK', 
@@ -60,299 +112,345 @@ const ServiceBookingScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#2C2C2E" />
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.backIcon}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Service Details</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.contentContainer}
         >
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Book Service</Text>
-      </View>
+          {/* Service Description */}
+          <View style={styles.descriptionSection}>
+            <Text style={styles.descriptionText}>
+              Give us the details regarding your service
+            </Text>
+          </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Service Center Info */}
-        <View style={styles.serviceCenterInfo}>
-          <Text style={styles.serviceCenterName}>
-            {serviceCenter?.name || 'Sterling AfterCare'}
-          </Text>
-          <Text style={styles.serviceCenterAddress}>
-            {serviceCenter?.address || 'Campbell Pl, Colombo 00600'}
-          </Text>
-        </View>
+          {/* Selected Services Preview */}
+          <View style={styles.selectedServicesPreview}>
+            <Text style={styles.sectionTitle}>Selected Services ({currentServices?.length || 0})</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.servicesScrollView}>
+              {currentServices?.map((service, index) => (
+                <View key={service.id} style={styles.selectedServiceChip}>
+                  <Text style={styles.selectedServiceText}>{service.name}</Text>
+                  <TouchableOpacity 
+                    onPress={() => removeService(service.id)}
+                    style={styles.removeServiceButton}
+                  >
+                    <Icon name="close" size={14} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
 
-        {/* Selected Services */}
-        <View style={styles.selectedServicesSection}>
-          <Text style={styles.sectionTitle}>Selected Services</Text>
-          {selectedServices?.map((service, index) => (
-            <View key={service.id} style={styles.selectedServiceItem}>
-              <Text style={styles.selectedServiceText}>{service.name}</Text>
+          {/* Booking Form */}
+          <View style={styles.form}>
+            {/* Date Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Select Date</Text>
+              <TouchableOpacity 
+                style={styles.datePickerButton}
+                onPress={() => setShowCalendar(!showCalendar)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.datePickerContent}>
+                  <Icon name="calendar-today" size={20} color="#007AFF" />
+                  <Text style={styles.datePickerText}>
+                    {formatDate(selectedDate)}
+                  </Text>
+                  <Icon name={showCalendar ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color="#8E8E93" />
+                </View>
+              </TouchableOpacity>
+              
+              {showCalendar && (
+                <View style={styles.calendarContainer}>
+                  <Calendar
+                    onDayPress={onDateSelect}
+                    markedDates={{
+                      [selectedDate]: {
+                        selected: true,
+                        selectedColor: '#007AFF'
+                      }
+                    }}
+                    theme={{
+                      backgroundColor: '#48484A',
+                      calendarBackground: '#48484A',
+                      textSectionTitleColor: '#FFFFFF',
+                      dayTextColor: '#FFFFFF',
+                      todayTextColor: '#007AFF',
+                      selectedDayTextColor: '#FFFFFF',
+                      monthTextColor: '#FFFFFF',
+                      arrowColor: '#007AFF',
+                      textDisabledColor: '#8E8E93',
+                      textDayFontWeight: '500',
+                      textMonthFontWeight: '600',
+                      textDayHeaderFontWeight: '500',
+                    }}
+                    minDate={new Date().toISOString().split('T')[0]}
+                    style={styles.calendar}
+                  />
+                </View>
+              )}
             </View>
-          ))}
-        </View>
 
-        {/* Booking Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Car Owner *</Text>
-            <TextInput
-              style={styles.input}
-              value={bookingData.carOwner}
-              onChangeText={(value) => handleInputChange('carOwner', value)}
-              placeholder="Enter car owner name"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
+            {/* Time Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Select Preferred Time</Text>
+              <TouchableOpacity
+                style={styles.timePickerButton}
+                onPress={() => setShowTimePicker(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.timePickerContent}>
+                  <Icon name="access-time" size={20} color="#007AFF" />
+                  <Text style={styles.timePickerText}>
+                    {formatTime(selectedTime)}
+                  </Text>
+                  <Icon name="keyboard-arrow-down" size={20} color="#8E8E93" />
+                </View>
+              </TouchableOpacity>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vehicle Type *</Text>
-            <TextInput
-              style={styles.input}
-              value={bookingData.vehicleType}
-              onChangeText={(value) => handleInputChange('vehicleType', value)}
-              placeholder="Enter vehicle type"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
+              {showTimePicker && (
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  is24Hour={false}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onTimeChange}
+                  style={styles.timePicker}
+                />
+              )}
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pickup Address *</Text>
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              value={bookingData.pickupAddress}
-              onChangeText={(value) => handleInputChange('pickupAddress', value)}
-              placeholder="Enter pickup address"
-              placeholderTextColor={colors.textSecondary}
-              multiline
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number *</Text>
-            <TextInput
-              style={styles.input}
-              value={bookingData.phoneNumber}
-              onChangeText={(value) => handleInputChange('phoneNumber', value)}
-              placeholder="Enter phone number"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Preferred Date *</Text>
-            <TouchableOpacity style={styles.datePickerButton}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Special Instructions</Text>
               <TextInput
-                style={styles.input}
-                value={bookingData.date}
-                onChangeText={(value) => handleInputChange('date', value)}
-                placeholder="Select date"
-                placeholderTextColor={colors.textSecondary}
+                style={[styles.input, styles.textArea]}
+                value={bookingData.specialInstructions}
+                onChangeText={(value) => handleInputChange('specialInstructions', value)}
+                placeholder="Any special instructions for the service provider..."
+                placeholderTextColor="#8E8E93"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
               />
-            </TouchableOpacity>
+            </View>
           </View>
+        </ScrollView>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Preferred Time Slot *</Text>
-            <TouchableOpacity style={styles.timePickerButton}>
-              <TextInput
-                style={styles.input}
-                value={bookingData.timeSlot}
-                onChangeText={(value) => handleInputChange('timeSlot', value)}
-                placeholder="Select time slot"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Special Instructions</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={bookingData.specialInstructions}
-              onChangeText={(value) => handleInputChange('specialInstructions', value)}
-              placeholder="Any special instructions for the service provider..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+        {/* Continue Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.continueButton} 
+            onPress={handleBookService}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Booking Summary */}
-        <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Booking Summary</Text>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Service Center:</Text>
-            <Text style={styles.summaryValue}>{serviceCenter?.name || 'Sterling AfterCare'}</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Services Count:</Text>
-            <Text style={styles.summaryValue}>{selectedServices?.length || 0} service(s)</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Date & Time:</Text>
-            <Text style={styles.summaryValue}>{bookingData.date}, {bookingData.timeSlot}</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Book Service Button */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookService}>
-          <Text style={styles.bookButtonText}>Book Service</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#2C2C2E',
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#2C2C2E',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: spacing.xxxl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButton: {
-    padding: spacing.sm,
-    marginRight: spacing.md,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backIcon: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: 'bold',
+    color: '#007AFF',
+    fontSize: 28,
+    fontWeight: '300',
   },
   headerTitle: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 32,
   },
   content: {
     flex: 1,
   },
-  serviceCenterInfo: {
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: 12,
-    marginBottom: spacing.lg,
+  contentContainer: {
+    paddingBottom: 120,
   },
-  serviceCenterName: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
+  descriptionSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
   },
-  serviceCenterAddress: {
-    color: colors.textSecondary,
-    fontSize: 14,
+  descriptionText: {
+    color: '#8E8E93',
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 24,
   },
-  selectedServicesSection: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+  selectedServicesPreview: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
   },
   sectionTitle: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
-  selectedServiceItem: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    marginBottom: spacing.xs,
+  servicesScrollView: {
+    marginTop: 4,
+  },
+  selectedServiceChip: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   selectedServiceText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '500',
+    marginRight: 8,
+  },
+  removeServiceButton: {
+    padding: 2,
   },
   form: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 20,
   },
   inputGroup: {
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   label: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '500',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#48484A',
     borderRadius: 12,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    color: colors.white,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: '#FFFFFF',
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  addressInput: {
-    minHeight: 60,
-    textAlignVertical: 'top',
+    fontWeight: '400',
   },
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
   },
+  dateScrollView: {
+    marginTop: 4,
+  },
   datePickerButton: {
-    position: 'relative',
-  },
-  timePickerButton: {
-    position: 'relative',
-  },
-  summarySection: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
+    backgroundColor: '#48484A',
     borderRadius: 12,
-    marginBottom: spacing.xl,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginTop: 4,
   },
-  summaryItem: {
+  datePickerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'space-between',
   },
-  summaryLabel: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  summaryValue: {
-    color: colors.white,
-    fontSize: 14,
+  datePickerText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '500',
     flex: 1,
-    textAlign: 'right',
+    marginLeft: 12,
+  },
+  calendarContainer: {
+    backgroundColor: '#48484A',
+    borderRadius: 12,
+    padding: 8,
+    marginTop: 8,
+  },
+  calendar: {
+    borderRadius: 12,
+  },
+  timePickerButton: {
+    backgroundColor: '#48484A',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  timePickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  timePickerText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
+  },
+  timePicker: {
+    backgroundColor: '#48484A',
+    marginTop: 8,
   },
   buttonContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-    paddingTop: spacing.lg,
-    backgroundColor: colors.background,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 34,
+    backgroundColor: '#2C2C2E',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  bookButton: {
-    backgroundColor: colors.primary,
+  continueButton: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingVertical: spacing.lg,
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  bookButtonText: {
-    color: colors.white,
+  continueButtonText: {
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
