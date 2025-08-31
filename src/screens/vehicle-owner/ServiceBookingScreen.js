@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
   StatusBar,
   SafeAreaView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar } from 'react-native-calendars';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
+import { vehicle } from '../../services/api/vehicle';
 
 const ServiceBookingScreen = ({ navigation, route }) => {
   const { serviceCenter, selectedServices } = route.params || {};
@@ -29,9 +32,70 @@ const ServiceBookingScreen = ({ navigation, route }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [currentServices, setCurrentServices] = useState(selectedServices || []);
+  const [userVehicles, setUserVehicles] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [userId, setUserId] = useState(null);
 
-  // Sample date options - removed
-  // Sample time slots - removed
+  useEffect(() => {
+    initializeUser();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserVehicles();
+    }
+  }, [userId]);
+
+  const initializeUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const parsedUserData = JSON.parse(userData);
+        const userIdFromStorage = parsedUserData.id || parsedUserData._id || parsedUserData.userId;
+        setUserId(userIdFromStorage);
+      }
+    } catch (error) {
+      console.error('Error getting user data:', error);
+    }
+  };
+
+  const fetchUserVehicles = async () => {
+    setLoadingVehicles(true);
+    try {
+      console.log('🚗 Fetching vehicles for user ID:', userId);
+      const vehicles = await vehicle.getVehiclesByOwnerId(userId);
+      console.log('data', vehicles);
+      setUserVehicles(vehicles);
+      
+      // Auto-select the vehicle since there's typically only one
+      if (vehicles.length > 0) {
+        setSelectedVehicle(vehicles[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching user vehicles:', error);
+      Alert.alert('Error', 'Failed to load your vehicle');
+      setUserVehicles([]);
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+
+  const VehicleInfoCard = ({ vehicle }) => (
+    <View style={styles.vehicleInfoCard}>
+      <View style={styles.vehicleIconContainer}>
+        <Icon name="directions-car" size={24} color="#007AFF" />
+      </View>
+      <View style={styles.vehicleCardContent}>
+        <Text style={styles.vehicleTitle}>
+          {vehicle.brandName} {vehicle.modelName}
+        </Text>
+        <Text style={styles.vehicleLicense}>
+          {vehicle.licensePlate || 'No license plate'}
+        </Text>
+      </View>
+    </View>
+  );
 
   const handleInputChange = (field, value) => {
     setBookingData(prev => ({
@@ -89,10 +153,16 @@ const ServiceBookingScreen = ({ navigation, route }) => {
       return;
     }
 
+    if (userVehicles.length === 0) {
+      Alert.alert('Error', 'Please add a vehicle first');
+      return;
+    }
+
     const bookingDetails = {
       ...bookingData,
       serviceCenter: serviceCenter,
       selectedServices: currentServices,
+      vehicle: userVehicles[0], // Use the first (and typically only) vehicle
       date: selectedDate,
       time: formatTime(selectedTime),
       bookingId: `BK${Date.now()}`,
@@ -122,7 +192,7 @@ const ServiceBookingScreen = ({ navigation, route }) => {
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.backIcon}>‹</Text>
+            <Icon name="arrow-back" size={24} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Service Details</Text>
           <View style={styles.headerSpacer} />
@@ -136,7 +206,7 @@ const ServiceBookingScreen = ({ navigation, route }) => {
           {/* Service Description */}
           <View style={styles.descriptionSection}>
             <Text style={styles.descriptionText}>
-              Give us the details regarding your service
+              Give us the details regarding your service request
             </Text>
           </View>
 
@@ -156,6 +226,34 @@ const ServiceBookingScreen = ({ navigation, route }) => {
                 </View>
               ))}
             </ScrollView>
+          </View>
+
+          {/* Vehicle Information */}
+          <View style={styles.vehicleSection}>
+            <Text style={styles.sectionTitle}>Your Vehicle</Text>
+            {loadingVehicles ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.loadingText}>Loading your vehicle...</Text>
+              </View>
+            ) : userVehicles.length > 0 ? (
+              <VehicleInfoCard vehicle={userVehicles[0]} />
+            ) : (
+              <View style={styles.noVehicleContainer}>
+                <View style={styles.noVehicleIcon}>
+                  <Icon name="directions-car" size={32} color="#8E8E93" />
+                </View>
+                <Text style={styles.noVehicleText}>No vehicle found in your account</Text>
+                <Text style={styles.noVehicleSubtext}>Add a vehicle to book services</Text>
+                <TouchableOpacity
+                  style={styles.addVehicleButton}
+                  onPress={() => navigation.navigate('AddVehicle')}
+                >
+                  <Icon name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.addVehicleButtonText}>Add Vehicle</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Booking Form */}
@@ -256,11 +354,20 @@ const ServiceBookingScreen = ({ navigation, route }) => {
         {/* Continue Button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.continueButton} 
+            style={[
+              styles.continueButton,
+              (userVehicles.length === 0 || currentServices.length === 0 || !selectedDate) && styles.continueButtonDisabled
+            ]} 
             onPress={handleBookService}
+            disabled={userVehicles.length === 0 || currentServices.length === 0 || !selectedDate}
             activeOpacity={0.8}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
+            <Text style={[
+              styles.continueButtonText,
+              (userVehicles.length === 0 || currentServices.length === 0 || !selectedDate) && styles.continueButtonTextDisabled
+            ]}>
+              Continue
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -323,7 +430,7 @@ const styles = StyleSheet.create({
   },
   selectedServicesPreview: {
     paddingHorizontal: 20,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionTitle: {
     color: '#FFFFFF',
@@ -352,6 +459,108 @@ const styles = StyleSheet.create({
   removeServiceButton: {
     padding: 2,
   },
+  
+  // Vehicle Information Styles
+  vehicleSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  vehicleInfoCard: {
+    backgroundColor: '#48484A',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.3)',
+  },
+  vehicleIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  vehicleCardContent: {
+    flex: 1,
+  },
+  vehicleTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  vehicleLicense: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  vehicleYear: {
+    color: '#8E8E93',
+    fontSize: 12,
+    fontWeight: '400',
+  },
+  vehicleStatusIndicator: {
+    marginLeft: 8,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  loadingText: {
+    color: '#8E8E93',
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  noVehicleContainer: {
+    backgroundColor: '#48484A',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(142, 142, 147, 0.3)',
+    borderStyle: 'dashed',
+  },
+  noVehicleIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(142, 142, 147, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  noVehicleText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  noVehicleSubtext: {
+    color: '#8E8E93',
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  addVehicleButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addVehicleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   form: {
     paddingHorizontal: 20,
   },
@@ -376,9 +585,6 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
-  },
-  dateScrollView: {
-    marginTop: 4,
   },
   datePickerButton: {
     backgroundColor: '#48484A',
@@ -449,10 +655,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
+  continueButtonDisabled: {
+    backgroundColor: '#48484A',
+  },
   continueButtonText: {
     color: '#000000',
     fontSize: 16,
     fontWeight: '600',
+  },
+  continueButtonTextDisabled: {
+    color: '#8E8E93',
   },
 });
 

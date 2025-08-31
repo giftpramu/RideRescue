@@ -105,12 +105,6 @@ const VehicleOwnerSignupScreen = ({ navigation, route }) => {
     }
   };
 
-  // Add a test function to check if the form validation works
-  const testFormValidation = () => {
-    console.log('Current form errors:', errors);
-    console.log('Form is valid:', Object.keys(errors).length === 0);
-  };
-
   return (
     <ImageBackground
       source={require('../../../assets/images/car-background.jpeg')}
@@ -286,11 +280,6 @@ const VehicleOwnerSignupScreen = ({ navigation, route }) => {
               />
             )}
           />
-
-          {/* Debug button - remove this in production */}
-          <TouchableOpacity onPress={testFormValidation} style={styles.debugButton}>
-            <Text style={styles.debugText}>Test Form Validation (Debug)</Text>
-          </TouchableOpacity>
 
           <Button
             title={isLoading ? "Creating Account..." : "Sign Up"}

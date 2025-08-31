@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { colors, spacing } from '../../styles';
 import { vehicleService } from '../../services/api/VehicleService';
@@ -21,7 +22,7 @@ import CustomDropdown from '../../components/common/CustomDropdown';
 
 const ServiceInsertionScreen = ({ navigation, route }) => {
   const [services, setServices] = useState([]);
-  const [providerServices, setProviderServices] = useState([]);
+  const [providerServices, setProviderServices] = useState([]); // Services added by this provider
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -38,14 +39,47 @@ const ServiceInsertionScreen = ({ navigation, route }) => {
     description: '',
   });
   const [submitting, setSubmitting] = useState(false);
-
-  // Assuming we get provider info from route params or auth context
-  const providerId = route.params?.providerId || 'current-provider-id';
+  const [providerId, setProviderId] = useState(null);
 
   useEffect(() => {
-    loadData();
-    loadBrands();
+    initializeProvider();
   }, []);
+
+  useEffect(() => {
+    if (providerId) {
+      loadData();
+      loadBrands();
+    }
+  }, [providerId]);
+
+  const initializeProvider = async () => {
+    try {
+      // Get stored user data which should contain the actual user ID
+      const userData = await AsyncStorage.getItem('userData');
+      console.log("userDta",userData);
+      
+      if (userData) {
+        const parsedUserData = JSON.parse(userData);
+        // Get the actual user ID from stored user data
+        const userId = parsedUserData.id || parsedUserData._id || parsedUserData.userId;
+        console.log("userId",userId);
+        
+        if (userId) {
+          setProviderId(userId);
+        } else {
+          Alert.alert('Error', 'User ID not found in stored data. Please login again.');
+          navigation.goBack();
+        }
+      } else {
+        Alert.alert('Error', 'No user data found. Please login again.');
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('Error getting provider ID from user data:', error);
+      Alert.alert('Error', 'Failed to get user information. Please login again.');
+      navigation.goBack();
+    }
+  };
 
   // Load models when brand is selected
   useEffect(() => {
