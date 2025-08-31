@@ -18,6 +18,7 @@ import { Calendar } from 'react-native-calendars';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { vehicle } from '../../services/api/vehicle';
+import { serviceRequestService } from '../../services/api/ServiceRequestService';
 
 const ServiceBookingScreen = ({ navigation, route }) => {
   const { serviceCenter, selectedServices } = route.params || {};
@@ -35,6 +36,7 @@ const ServiceBookingScreen = ({ navigation, route }) => {
   const [userVehicles, setUserVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
@@ -63,25 +65,24 @@ const ServiceBookingScreen = ({ navigation, route }) => {
   const fetchUserVehicles = async () => {
     setLoadingVehicles(true);
     try {
-      console.log('🚗 Fetching vehicles for user ID:', userId);
+      // Assuming you have an endpoint to get vehicles by user ID
       const vehicles = await vehicle.getVehiclesByOwnerId(userId);
-      console.log('data', vehicles);
       setUserVehicles(vehicles);
       
-      // Auto-select the vehicle since there's typically only one
-      if (vehicles.length > 0) {
+      // Auto-select first vehicle if only one exists
+      if (vehicles.length === 1) {
         setSelectedVehicle(vehicles[0]);
       }
     } catch (error) {
       console.error('Error fetching user vehicles:', error);
-      Alert.alert('Error', 'Failed to load your vehicle');
+      Alert.alert('Error', 'Failed to load your vehicles');
       setUserVehicles([]);
     } finally {
       setLoadingVehicles(false);
     }
   };
 
-  const VehicleInfoCard = ({ vehicle }) => (
+    const VehicleInfoCard = ({ vehicle }) => (
     <View style={styles.vehicleInfoCard}>
       <View style={styles.vehicleIconContainer}>
         <Icon name="directions-car" size={24} color="#007AFF" />
@@ -141,7 +142,11 @@ const ServiceBookingScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleBookService = () => {
+  const handleVehicleSelect = (vehicle) => {
+    setSelectedVehicle(vehicle);
+  };
+
+  const handleBookService = async () => {
     // Validate required fields
     if (currentServices.length === 0) {
       Alert.alert('Error', 'Please select at least one service');
@@ -158,27 +163,41 @@ const ServiceBookingScreen = ({ navigation, route }) => {
       return;
     }
 
-    const bookingDetails = {
-      ...bookingData,
-      serviceCenter: serviceCenter,
-      selectedServices: currentServices,
-      vehicle: userVehicles[0], // Use the first (and typically only) vehicle
-      date: selectedDate,
-      time: formatTime(selectedTime),
-      bookingId: `BK${Date.now()}`,
-      status: 'pending'
-    };
+    setSubmittingRequest(true);
 
-    Alert.alert(
-      'Booking Confirmed',
-      `Your service request has been sent to ${serviceCenter?.businessName || serviceCenter?.name}. You will be notified once they accept your request.`,
-      [
-        { 
-          text: 'OK', 
-          onPress: () => navigation.navigate('Home')
-        }
-      ]
-    );
+    try {
+      // Prepare the service request data for the backend
+      const serviceRequestData = {
+        vehicleOwnerId: userId,
+        serviceProviderId: serviceCenter.id,
+        vehicleId: userVehicles[0].id,
+        serviceIds: currentServices.map(service => service.id),
+        scheduledDate: selectedDate,
+        scheduledTime: selectedTime.toTimeString().split(' ')[0], // Format as HH:mm:ss
+        specialInstructions: bookingData.specialInstructions || '',
+        bookingId: `BK${Date.now()}`,
+      };
+
+      console.log('📤 Submitting service request:', serviceRequestData);
+
+      // Create the service request via API
+      const createdRequest = await serviceRequestService.createServiceRequest(serviceRequestData);
+
+      navigation.navigate('ServiceRequestSuccess', {
+        serviceCenter: serviceCenter,
+        requestId: createdRequest.id
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating service request:', error);
+      Alert.alert(
+        'Booking Failed', 
+        error.message || 'Failed to submit your service request. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setSubmittingRequest(false);
+    }
   };
 
   return (
@@ -356,15 +375,15 @@ const ServiceBookingScreen = ({ navigation, route }) => {
           <TouchableOpacity 
             style={[
               styles.continueButton,
-              (userVehicles.length === 0 || currentServices.length === 0 || !selectedDate) && styles.continueButtonDisabled
+              (!selectedVehicle || currentServices.length === 0 || !selectedDate) && styles.continueButtonDisabled
             ]} 
             onPress={handleBookService}
-            disabled={userVehicles.length === 0 || currentServices.length === 0 || !selectedDate}
+            disabled={!selectedVehicle || currentServices.length === 0 || !selectedDate}
             activeOpacity={0.8}
           >
             <Text style={[
               styles.continueButtonText,
-              (userVehicles.length === 0 || currentServices.length === 0 || !selectedDate) && styles.continueButtonTextDisabled
+              (!selectedVehicle || currentServices.length === 0 || !selectedDate) && styles.continueButtonTextDisabled
             ]}>
               Continue
             </Text>
@@ -460,10 +479,13 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   
-  // Vehicle Information Styles
+  // Vehicle Selection Styles
   vehicleSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
+  },
+  vehiclesScrollView: {
+    marginTop: 4,
   },
   vehicleInfoCard: {
     backgroundColor: '#48484A',
@@ -665,6 +687,16 @@ const styles = StyleSheet.create({
   },
   continueButtonTextDisabled: {
     color: '#8E8E93',
+  },
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingButtonText: {
+    color: '#8E8E93',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

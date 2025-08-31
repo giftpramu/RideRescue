@@ -16,6 +16,7 @@ import EmergencyServiceScreen from '../screens/vehicle-owner/EmergencyServiceScr
 import MapScreen from '../screens/vehicle-owner/MapScreen';
 import ServiceCenterDetailScreen from '../screens/vehicle-owner/ServiceCenterDetailScreen';
 import ServiceBookingScreen from '../screens/vehicle-owner/ServiceBookingScreen';
+import ServiceRequestSuccessScreen from '../screens/vehicle-owner/ServiceRequestSuccessScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -294,7 +295,8 @@ const MainNavigator = () => {
       {/* Map-related screens */}
       <Stack.Screen name="ServiceCenterDetail" component={ServiceCenterDetailScreen} />
       <Stack.Screen name="ServiceBooking" component={ServiceBookingScreen} />
-      
+      <Stack.Screen name="ServiceRequestSuccess" component={ServiceRequestSuccessScreen} />
+
       {/* Other screens */}
       <Stack.Screen name="VehicleDetails" component={VehicleDetailsScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
