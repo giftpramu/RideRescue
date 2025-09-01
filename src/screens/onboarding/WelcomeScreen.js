@@ -6,7 +6,7 @@ import { colors, spacing } from '../../styles';
 const WelcomeScreen = ({ navigation }) => {
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >

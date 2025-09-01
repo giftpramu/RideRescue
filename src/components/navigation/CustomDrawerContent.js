@@ -8,7 +8,7 @@ const CustomDrawerContent = ({ navigation }) => {
 
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -93,7 +93,7 @@ const CustomDrawerContent = ({ navigation }) => {
           {/* Car Image in Drawer */}
           <View style={styles.drawerCarSection}>
             <Image
-              source={require('../../../assets/images/car-background.jpeg')}
+              source={require('../../../assets/images/car-background.png')}
               style={styles.drawerCarImage}
               resizeMode="contain"
             />

@@ -131,7 +131,7 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -174,7 +174,7 @@ const ProfileScreen = ({ navigation }) => {
           {/* Car Image in Profile */}
           <View style={styles.profileCarSection}>
             <Image
-              source={require('../../../assets/images/car-background.jpeg')}
+              source={require('../../../assets/images/car-background.png')}
               style={styles.profileCarImage}
               resizeMode="contain"
             />

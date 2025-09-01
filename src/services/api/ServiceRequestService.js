@@ -77,6 +77,16 @@ export const serviceRequestService = {
     }
   },
 
+  // Get service requests by service provider and status
+  getServiceRequestsByServiceProviderAndStatus: async (providerId, status) => {
+    try {
+      const response = await api.get(`/service-requests/service-provider/${providerId}/status/${status}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch service requests');
+    }
+  },
+
   // Cancel service request (for vehicle owners)
   cancelServiceRequest: async (id) => {
     try {
@@ -86,4 +96,13 @@ export const serviceRequestService = {
       throw new Error(error.response?.data?.message || 'Failed to cancel service request');
     }
   },
+
+  updateServiceRequest: async (id, serviceRequestData) => {
+  try {
+    const response = await api.put(`/service-requests/${id}`, serviceRequestData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to update service request');
+  }
+},
 };

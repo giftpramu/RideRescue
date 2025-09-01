@@ -17,6 +17,7 @@ import { ServiceInsertionScreen } from '../../screens/service-provider/ServiceIn
 import { ServiceCategoryManagementScreen } from '../../screens/common/ServiceCategoryManagementScreen';
 import AddCategoryScreen from '../../screens/common/AddCategoryScreen';
 import CreateServiceScreen from '../../screens/service-provider/CreateServiceScreen';
+import ServiceRequestPreviewScreen from '../../screens/service-provider/ServiceRequestPreviewScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -64,7 +65,7 @@ const ServiceProviderMenuScreen = ({ navigation }) => {
 
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -256,6 +257,7 @@ const ServiceProviderNavigator = () => {
       <Stack.Screen name="ServiceCategoryManagement" component={ServiceCategoryManagementScreen} />
       <Stack.Screen name="AddCategory" component={AddCategoryScreen} />
       <Stack.Screen name="CreateService" component={CreateServiceScreen} />
+      <Stack.Screen name="ServiceRequestPreview" component={ServiceRequestPreviewScreen} />
     </Stack.Navigator>
   );
 };

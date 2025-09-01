@@ -68,7 +68,7 @@ const SideMenuScreen = ({ navigation }) => {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/car-background.jpeg')}
+      source={require('../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -111,7 +111,7 @@ const SideMenuScreen = ({ navigation }) => {
           {/* Car Image */}
           <View style={styles.carSection}>
             <Image
-              source={require('../../assets/images/car-background.jpeg')}
+              source={require('../../assets/images/car-background.png')}
               style={styles.carImage}
               resizeMode="contain"
             />

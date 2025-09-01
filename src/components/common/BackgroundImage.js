@@ -5,7 +5,7 @@ import { colors } from '../../styles';
 const BackgroundImage = ({ children, style = {} }) => {
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={[styles.background, style]}
       resizeMode="cover"
     >

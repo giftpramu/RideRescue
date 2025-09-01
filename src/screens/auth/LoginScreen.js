@@ -112,7 +112,7 @@ const LoginScreen = ({ navigation, route }) => {
 
   return (
     <ImageBackground
-      source={require('../../../assets/images/car-background.jpeg')}
+      source={require('../../../assets/images/car-background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
