@@ -4,138 +4,110 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
+  ScrollView,
+  StatusBar,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing } from '../../styles';
 
 const ProfileScreen = ({ navigation }) => {
+  console.log('👤 ProfileScreen COMPONENT RENDERED');
   const { user, signOut } = useAuth();
 
-  const menuItems = [
-    { 
-      id: 1, 
-      title: 'Edit Profile', 
-      icon: '👤', 
-      screen: 'EditProfile',
-      color: colors.white 
+  const profileOptions = [
+    {
+      id: 1,
+      title: 'Edit Profile',
+      icon: 'person-outline',
+      onPress: () => {
+        navigation.navigate('EditProfile');
+      },
     },
-    { 
-      id: 2, 
-      title: 'Vehicle Details', 
-      icon: '👤', 
-      screen: 'VehicleDetails',
-      color: colors.white 
-    },
-    { 
-      id: 3, 
-      title: 'Delete account', 
-      icon: '🗑️', 
-      action: 'delete',
-      color: colors.white 
-    },
-    { 
-      id: 4, 
-      title: 'Log out', 
-      icon: '🔓', 
-      action: 'logout',
-      color: colors.error 
+    {
+      id: 2,
+      title: 'Vehicle Details',
+      icon: 'car-outline',
+      onPress: () => {
+        navigation.navigate('VehicleDetails');
+      },
     },
   ];
 
-  const handleMenuPress = (item) => {
-    if (item.screen) {
-      navigation.navigate(item.screen);
-    } else if (item.action === 'logout') {
-      handleLogout();
-    } else if (item.action === 'delete') {
-      handleDeleteAccount();
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log Out', style: 'destructive', onPress: signOut },
-      ]
-    );
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive', 
-          onPress: () => {
-            // Here you would typically call an API to delete the account
-            Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
-            signOut();
-          }
-        },
-      ]
-    );
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your Profile</Text>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.settingsIcon}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>👤</Text>
-          </View>
-          <View style={styles.editBadge}>
-            <Text style={styles.editIcon}>✏️</Text>
-          </View>
-        </View>
-        <Text style={styles.userName}>{user?.name || 'Pramudi Gamage'}</Text>
-        <Text style={styles.userEmail}>{user?.email || 'gamage123@gmail.com'}</Text>
-      </View>
-
-      {/* Menu Items */}
-      <View style={styles.menuContainer}>
-        {menuItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.menuItem}
-            onPress={() => handleMenuPress(item)}
-          >
-            <View style={styles.menuItemLeft}>
-              <Text style={styles.menuIcon}>{item.icon}</Text>
-              <Text style={[styles.menuTitle, { color: item.color }]}>{item.title}</Text>
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Header */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Icon name="person" size={40} color={colors.white} />
             </View>
-            <Text style={[styles.menuArrow, { color: item.color }]}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View style={styles.editIconContainer}>
+              <Icon name="pencil" size={16} color={colors.white} />
+            </View>
+          </View>
+          
+          <Text style={styles.userName}>
+            {user?.name || 'Pramudi Gamage'}
+          </Text>
+          <Text style={styles.userEmail}>
+            {user?.email || 'gamage434@gmail.com'}
+          </Text>
+        </View>
 
-      {/* Bottom Navigation Placeholder */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.navIcon}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📍</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Profile Options Card */}
+        <View style={styles.optionsCard}>
+          {profileOptions.map((option, index) => (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.optionItem,
+                index === profileOptions.length - 1 && styles.lastOptionItem
+              ]}
+              onPress={option.onPress}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionLeft}>
+                <View style={styles.optionIconContainer}>
+                  <Icon name={option.icon} size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.optionTitle}>{option.title}</Text>
+              </View>
+              <Icon name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          ))}
+          
+          {/* Logout Option */}
+          <TouchableOpacity
+            style={styles.logoutItem}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <View style={styles.optionLeft}>
+              <View style={styles.logoutIconContainer}>
+                <Icon name="log-out-outline" size={20} color={colors.error} />
+              </View>
+              <Text style={styles.logoutTitle}>Log out</Text>
+            </View>
+            <Icon name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -145,116 +117,113 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.xxxl,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xl,
   },
-  headerTitle: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  settingsButton: {
-    padding: spacing.sm,
-  },
-  settingsIcon: {
-    fontSize: 20,
-  },
-  profileSection: {
+  profileHeader: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.xxl,
   },
   avatarContainer: {
     position: 'relative',
     marginBottom: spacing.lg,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 50,
-    color: colors.background,
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
+    borderColor: colors.primary,
+  },
+  editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
     borderColor: colors.background,
   },
-  editIcon: {
-    fontSize: 14,
-    color: colors.white,
-  },
   userName: {
-    color: colors.white,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: colors.white,
     marginBottom: spacing.xs,
+    textAlign: 'center',
   },
   userEmail: {
-    color: colors.textSecondary,
     fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
-  menuContainer: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
+  optionsCard: {
+    backgroundColor: colors.surface,
     borderRadius: 16,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
+    overflow: 'hidden',
   },
-  menuItem: {
+  optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  menuItemLeft: {
+  lastOptionItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  logoutItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  menuIcon: {
-    fontSize: 20,
+  optionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: spacing.md,
-    width: 30,
   },
-  menuTitle: {
+  logoutIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  optionTitle: {
     fontSize: 16,
     fontWeight: '500',
+    color: colors.white,
   },
-  menuArrow: {
-    fontSize: 18,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  navItem: {
-    padding: spacing.md,
-  },
-  navIcon: {
-    fontSize: 24,
+  logoutTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.error,
   },
 });
 

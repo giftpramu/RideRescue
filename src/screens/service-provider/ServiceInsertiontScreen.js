@@ -569,4 +569,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export { ServiceInsertionScreen };
+export default ServiceInsertionScreen;

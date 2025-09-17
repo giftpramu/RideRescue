@@ -11,7 +11,7 @@ const getBaseURL = () => {
 
   if (__DEV__) {
     if (Platform.OS === 'android') {
-      return 'http://192.168.8.183:8080'; // Android emulator
+      return 'http://10.0.2.2:8080'; // Android emulator
     } else {
       return 'http://localhost:8080'; // iOS simulator
     }

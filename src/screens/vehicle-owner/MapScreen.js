@@ -30,6 +30,7 @@ export default function MapScreen({ navigation }) {
     
     try {   
       const data = await serviceProviderService.getNearbyProviders(userLat, userLng, 25);
+      console.log("data",data);
       
       if (data.success) {
         setProviders(data.providers || []);
